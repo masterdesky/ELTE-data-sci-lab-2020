@@ -1,1 +1,1 @@
-# Data Science Laboratory 2020-2021/1 @ ELTE
+# Data Science Computer Laboratory 2020-2021/1 @ ELTE
