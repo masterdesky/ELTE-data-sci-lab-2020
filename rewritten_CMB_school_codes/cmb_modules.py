@@ -1,11 +1,23 @@
-import numpy as np
-import matplotlib
 import sys
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
+import numpy as np
 import astropy.io.fits as fits
 
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.cm as cmap
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import astropy.io.fits as fits
+
+axistitlesize = 20
+axisticksize = 17
+axislabelsize = 26
+axislegendsize = 23
+axistextsize = 20
+axiscbarfontsize = 15
 
 
 def make_CMB_T_map(ell, DlTT,
@@ -15,19 +27,26 @@ def make_CMB_T_map(ell, DlTT,
     
     Parameters:
     -----------
-    ell : array-like
+    ell : list or array-like
         desc
-
-    DlTT : array-like
+    DlTT : list or array-like
         desc
-    
     N : int
         Number of pixel in the linear dimension
-        
     pix_size : float
         Size of a pixel in arcminutes
+        
+    Returns:
+    --------
+    CMB_T : 
+        desc
+    CLTT2d : 
+        desc
+    FT_2d : 
+        desc
+    ell2d : 
+        desc
     """
-
     # Convert Dl to Cl
     ClTT = DlTT * 2 * np.pi / (ell * (ell + 1))
     # Set the monopole and the dipole of the Cl spectrum to zero
@@ -36,9 +55,10 @@ def make_CMB_T_map(ell, DlTT,
 
     # Make a 2D real space coordinate system
     onesvec = np.ones(N)
-    inds  = (np.arange(N) + 0.5 - N/2) /(N - 1) # create an array of size N between -0.5 and +0.5
-    # Compute the outer product matrix: X[i, j] = onesvec[i] * inds[j] for i,j 
-    # in range(N), which is just `N` rows copies of inds - for the x dimension
+    inds  = (np.arange(N) + 0.5 - N/2) /(N - 1) # create an array of size `N` between -0.5 and +0.5
+    # Compute the outer product matrix:
+    #      X[i, j] = onesvec[i] * inds[j] for i,j in range(N)
+    # which is just `N` rows copies of `inds` - for the x dimension
     X = np.outer(onesvec, inds) 
     # Compute the transpose for the y dimension
     Y = np.transpose(X)
@@ -48,125 +68,213 @@ def make_CMB_T_map(ell, DlTT,
     # Now make a 2D CMB power spectrum
     pix_to_rad = (pix_size/60 * np.pi/180)     # Going from `pix_size` in arcmins to degrees and then degrees to radians
     ell_scale_factor = 2 * np.pi / pix_to_rad  # Now relating the angular size in radians to multipoles
-    ell2d = R * ell_scale_factor               # Making a fourier space analogue to the real space R vector
+    ell2d = R * ell_scale_factor               # Making a fourier space analogue to the real space `R` vector
     ClTT_expanded = np.zeros(int(ell2d.max()) + 1) 
-    # Making an expanded Cl spectrum (of zeros) that goes all the way to the size of the 2D ell vector
-    ClTT_expanded[0:(ClTT.size)] = ClTT        # Fill in the Cls until the max of the ClTT vector
+    # Making an expanded Cl spectrum (of zeros) that goes all the way to the size of the 2D `ell` vector
+    ClTT_expanded[0:(ClTT.size)] = ClTT        # Fill in the Cls until the max of the `ClTT` vector
 
     # The 2D Cl spectrum is defined on the multiple vector set by the pixel scale
-    CLTT2d = ClTT_expanded[ell2d.astype(int)] 
+    ClTT2d = ClTT_expanded[ell2d.astype(int)] 
     
     # Now make a realization of the CMB with the given power spectrum in real space
-    random_array_for_T = np.random.normal(0,1,(N,N))
+    random_array_for_T = np.random.normal(0, 1, (N,N))
     FT_random_array_for_T = np.fft.fft2(random_array_for_T)   # Take FFT since we are in Fourier space
-    FT_2d = np.sqrt(CLTT2d) * FT_random_array_for_T           # We take the sqrt since the power spectrum is T^2
+    FT_2d = np.sqrt(ClTT2d) * FT_random_array_for_T           # We take the sqrt since the power spectrum is T^2
     
     # Move back from ell space to real space
     CMB_T = np.fft.ifft2(np.fft.fftshift(FT_2d)) 
     # Move back to pixel space for the map
-    CMB_T = CMB_T/(pix_size /60.* np.pi/180.)
+    CMB_T /= (pix_size /60 * np.pi/180)
     # We only want to plot the real component
     CMB_T = np.real(CMB_T)
 
-    return(CMB_T, CLTT2d, FT_2d, ell2d)
-###############################
+    return(CMB_T, ClTT2d, FT_2d, ell2d)
+  ###############################
 
-def Plot_CMB_Map(Map_to_Plot,c_min,c_max,X_width,Y_width):
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    print("map mean:",np.mean(Map_to_Plot),"map rms:",np.std(Map_to_Plot))
-    plt.gcf().set_size_inches(10, 10)
-    im = plt.imshow(Map_to_Plot, interpolation='bilinear', origin='lower',cmap=cm.RdBu_r)
-    im.set_clim(c_min,c_max)
-    ax=plt.gca()
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
+def plot_CMB_map(cmb_map, X_width, Y_width,
+                 c_min=-400, c_max=400):
+
+    fig, axes = plt.subplots(figsize=(12,12))
     
-    cbar = plt.colorbar(im, cax=cax)
-    #cbar = plt.colorbar()
-    im.set_extent([0,X_width,0,Y_width])
-    plt.ylabel('angle $[^\circ]$')
-    plt.xlabel('angle $[^\circ]$')
-    cbar.set_label('tempearture [uK]', rotation=270)
+    im = axes.imshow(cmb_map, vmin=c_min, vmax=c_max,
+                     interpolation='bilinear', origin='lower', cmap=cmap.RdBu_r)
+    im.set_extent([0,X_width, 0,Y_width])
+    
+    axes.set_title('map mean : {0} map rms : {1}'.format(np.mean(cmb_map), np.std(cmb_map)),
+                   fontsize=axistitlesize, fontweight='bold')
+    axes.set_xlabel('Angle $[^\circ]$', fontsize=axislabelsize, fontweight='bold')
+    axes.set_ylabel('Angle $[^\circ]$', fontsize=axislabelsize, fontweight='bold')
+    axes.tick_params(axis='both', which='major', labelsize=axisticksize)
+    
+    # Create an axis on the right side of `axes`. The width of `cax` will be 5%
+    # of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
+    divider = make_axes_locatable(axes)
+    cax = divider.append_axes('right', size='5%', pad=0.1)
+    cbar = plt.colorbar(mappable=im, cax=cax)
+    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
+    cbar.set_label('Temperature [$\mu$K]', fontsize=axiscbarfontsize+8, rotation=90, labelpad=22)
     
     plt.show()
-    return(0)
-###############################
+  ###############################
 
-
-def Poisson_source_component(N,pix_size,Number_of_Sources,Amplitude_of_Sources):
-    "makes a realization of a naive Poisson-distributed point source map"
-    PSMap = np.zeros([np.int(N),np.int(N)])
-    i = 0
-    print('Number of sources required: ', Number_of_Sources)
+def poisson_source_component(N, pix_size, number_of_sources, amplitude_of_sources):
+    """
+    Makes a realization of a naive Poisson distributed point source map.
     
-    while (i < int(Number_of_Sources)):
-        pix_x = np.int(N*np.random.rand())
-        pix_y = np.int(N*np.random.rand())
-        PSMap[pix_x,pix_y] += np.random.poisson(Amplitude_of_Sources)
-        i = i + 1
+    Parameters:
+    -----------
+    N : int
+        Number of pixels in the linear dimension.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    number_of_sources : int
+        Number of Poisson distributed point sources on the source map.
+    amplitude_of_sources : float
+        Amplitude of point sources, which serves as the `lambda` parameter
+        for the Poisson-distribution used to choose random points from.
 
-    return(PSMap)    
-  ############################### 
-
-def Exponential_source_component(N,pix_size,Number_of_Sources_EX,Amplitude_of_Sources_EX):
-    N=int(N)
-    "makes a realization of a naive exponentially-distributed point source map"
-    PSMap = np.zeros([N,N])
-    i = 0
-    while (i < Number_of_Sources_EX):
-        pix_x = int(N*np.random.rand() )
+    Returns:
+    --------
+    PSMap : array of shape (N, N)
+        The Poisson distributed point sources marked on the map in the form of a 2D matrix.
+    """
+    PSMap = np.zeros([int(N),int(N)])
+    # We throw random numbers repeatedly with amplitudes given by a Poisson distribution around the mean amplitude
+    for i in range(number_of_sources):
+        pix_x = int(N*np.random.rand())
         pix_y = int(N*np.random.rand()) 
-        PSMap[pix_x,pix_y] += np.random.exponential(Amplitude_of_Sources_EX)
-        i = i + 1
+        PSMap[pix_x, pix_y] += np.random.poisson(lam=amplitude_of_sources)
 
-    return(PSMap)    
+    return(PSMap)   
   ############################### 
 
-def SZ_source_component(N,pix_size,Number_of_SZ_Clusters,Mean_Amplitude_of_SZ_Clusters,SZ_beta,SZ_Theta_core,do_plots):
-    "makes a realization of a nieve SZ map"
-    N=int(N)
-    SZMap = np.zeros([N,N])
-    SZcat = np.zeros([3,Number_of_SZ_Clusters]) ## catalogue of SZ sources, X, Y, amplitude
+def exponential_source_component(N, pix_size, number_of_sources_EX, amplitude_of_sources_EX):
+    """
+    Makes a realization of a naive exponentially-distributed point source map
+    
+    Parameters:
+    -----------
+    N : int
+        Number of pixels in the linear dimension.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    number_of_sources_EX : int
+        Number of exponentially distributed point sources on the source map.
+    amplitude_of_sources_EX : float
+        Amplitude of point sources, which serves as the scale parameter
+        for the exponential distribution
+
+    Returns:
+    --------
+    PSMap : array of shape (N, N)
+        The exponentially distributed point sources marked on the map in the form of a 2D matrix.
+    """
+    PSMap = np.zeros([int(N), int(N)])
+    # We throw random numbers repeatedly with amplitudes given by an exponential distribution around the mean amplitude
+    for i in range(number_of_sources_EX):
+        pix_x = int(N*np.random.rand()) 
+        pix_y = int(N*np.random.rand()) 
+        PSMap[pix_x,pix_y] += np.random.exponential(scale=amplitude_of_sources_EX)
+
+    return(PSMap)  
+  ############################### 
+
+def SZ_source_component(N, pix_size, number_of_SZ_clusters, mean_amplitude_of_SZ_clusters, SZ_beta, SZ_theta_core, do_plots):
+    """
+    Makes a realization of a naive SZ effect map.
+
+    Parameters:
+    -----------
+    N : int
+        Number of pixels in the linear dimension.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    number_of_SZ_clusters : int
+        desc
+    mean_amplitude_of_SZ_clusters : float
+        desc
+    SZ_beta : float
+        desc
+    SZ_theta_core : float
+        desc
+    do_plots : bool
+        desc
+
+    Returns:
+    --------
+    SZMap : 
+        desc
+    SZcat : 
+        desc
+    """
+
+    # Placeholder for the SZ map
+    SZmap = np.zeros([N,N])
+    # Catalogue of SZ sources, X, Y, amplitude
+    SZcat = np.zeros([3, number_of_SZ_clusters])
     # make a distribution of point sources with varying amplitude
-    i = 0
-    while (i < Number_of_SZ_Clusters):
-        pix_x = np.int(N*np.random.rand())
-        pix_y = np.int(N*np.random.rand() )
-        pix_amplitude = np.random.exponential(Mean_Amplitude_of_SZ_Clusters)*(-1.)
+    for i in range(number_of_SZ_clusters):
+        pix_x = int(N*np.random.rand())
+        pix_y = int(N*np.random.rand())
+        pix_amplitude = np.random.exponential(mean_amplitude_of_SZ_clusters)*(-1)
         SZcat[0,i] = pix_x
         SZcat[1,i] = pix_y
         SZcat[2,i] = pix_amplitude
-        SZMap[pix_x,pix_y] += pix_amplitude
-        i = i + 1
-    if (do_plots):
-        hist,bin_edges = np.histogram(SZMap,bins = 50,range=[SZMap.min(),-10])
-        plt.semilogy(bin_edges[0:-1],hist)
-        plt.xlabel('source amplitude [$\mu$K]')
-        plt.ylabel('number or pixels')
+        SZmap[pix_x,pix_y] += pix_amplitude
+
+    if do_plots:
+        hist, bins = np.histogram(SZMap,bins = 50,range=[SZmap.min(),-10])
+        width = 1.0 * np.diff(bins).min()
+        centers = (bins[1:] + bins[:-1]) / 2
+        fig, axes = plt.subplots(figsize=(12,12))
+        axes.set_yscale('log')
+        axes.bar(centers, hist, width=width,
+                 ec='black', lw=0.5)
+        axes.set_xlabel('Source amplitude [$\mu$K]', fontsize=axislabelsize, fontweight='bold')
+        axes.set_ylabel('Number of pixels', fontsize=axislabelsize, fontweight='bold')
+        axes.tick_params(axis='both', which='major', labelsize=axisticksize)
         plt.show()
-    
+
     # make a beta function
-    beta = beta_function(N,pix_size,SZ_beta,SZ_Theta_core)
-    
-    # convovle the beta funciton with the point source amplitude to get the SZ map
+    beta = beta_function(N, pix_size, SZ_beta, SZ_theta_core)
+
+    # convolve the beta function with the point source amplitude to get the SZ map
+    # NOTE: you should go back to the Intro workshop for more practice with convolutions!
     FT_beta = np.fft.fft2(np.fft.fftshift(beta))
-    FT_SZMap = np.fft.fft2(np.fft.fftshift(SZMap))
-    SZMap = np.fft.fftshift(np.real(np.fft.ifft2(FT_beta*FT_SZMap)))
-    
+    FT_SZmap = np.fft.fft2(np.fft.fftshift(SZmap))
+    SZmap = np.fft.fftshift(np.real(np.fft.ifft2(FT_beta*FT_SZmap)))
+
     # return the SZ map
-    return(SZMap,SZcat)    
+    return(SZmap, SZcat)
   ############################### 
 
-def beta_function(N,pix_size,SZ_beta,SZ_Theta_core):
-  # make a beta function
-    N=int(N)
-    ones = np.ones(N)
-    inds  = (np.arange(N)+.5 - N/2.) * pix_size
-    X = np.outer(ones,inds)
-    Y = np.transpose(X)
-    R = np.sqrt(X**2. + Y**2.)
+def beta_function(N, pix_size, SZ_beta, SZ_theta_core):
+    """
+    Makes a beta function.
     
-    beta = (1 + (R/SZ_Theta_core)**2.)**((1-3.*SZ_beta)/2.)
+    Parameters:
+    -----------
+    N : int
+        Number of pixels in the linear dimension.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    SZ_beta : float
+        desc
+    SZ_theta_core : float
+        desc
+
+    Returns:
+    --------
+    beta : array of shape ()
+    """
+    ones = np.ones(N)
+    inds  = (np.arange(N) + 0.5 - N/2) * pix_size
+    X = np.outer(ones, inds)
+    Y = np.transpose(X)
+    # Compute the same real-space R function as before for the PS
+    R = np.sqrt(X**2 + Y**2)
+    
+    beta = (1 + (R/SZ_theta_core)**2)**((1-3*SZ_beta)/2)
 
     # return the beta function map
     return(beta)

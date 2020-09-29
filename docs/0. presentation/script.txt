@@ -1,0 +1,6 @@
+
+
+Describing the CMB is like describing energy levels of the hydrogen atom. So what do I mean? In the case of the hydrogen atom you have an initial/base image/model (the Schrödinger equation in particular), which on itself could describe your observations pretty well to a certain extent. It is actually a good approximation regarding the position of the energy levels. But as your measurements become more and more precise, the more details come to light/unveil. You discover the fine structure, the hyperfine structure, so I mean all those small effects and components, which determines the actual/true structure of the energy levels in the H atom. You need to make numerous corrections to your base model to address all these perturbations.
+The same goes for the CMB. You have some basic image (the angular power spectrum this time), which describes your observations pretty well. But there are a lot of other effects, which contribute to the final/actual structure of the CMB. Different type of point sources, Sunyev-Zeldovich sources, lensing effects, different effects of the measuring instrument. And you need to pay attention to all of these in a proper analysis of observational data or in an accurate computer simulation.
+
+So my main goal is to 
