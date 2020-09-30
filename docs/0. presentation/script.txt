@@ -1,6 +1,16 @@
+* title slide *
+Hello everyone! Now it's my turn to speak about my Data Sci. Lab. project. So, in this course I'm focusing on the study of the Cosmic Microwave Background (or CMB for short). As I've seen all the names in this call, I can assume that of course everyone has heard of the CMB already.
 
+* slide 1 *
+You've probably also seen this image of the CMB, or more precisely the map of the temperature fluctuations in the CMB radiation. This phenomenon is obviously actively studied, because of its essential role in the understanding of foundational questions and topics in physics (eg. cosmological parameters using this).
 
-Describing the CMB is like describing energy levels of the hydrogen atom. So what do I mean? In the case of the hydrogen atom you have an initial/base image/model (the Schrödinger equation in particular), which on itself could describe your observations pretty well to a certain extent. It is actually a good approximation regarding the position of the energy levels. But as your measurements become more and more precise, the more details come to light/unveil. You discover the fine structure, the hyperfine structure, so I mean all those small effects and components, which determines the actual/true structure of the energy levels in the H atom. You need to make numerous corrections to your base model to address all these perturbations.
-The same goes for the CMB. You have some basic image (the angular power spectrum this time), which describes your observations pretty well. But there are a lot of other effects, which contribute to the final/actual structure of the CMB. Different type of point sources, Sunyev-Zeldovich sources, lensing effects, different effects of the measuring instrument. And you need to pay attention to all of these in a proper analysis of observational data or in an accurate computer simulation.
+* slide 2 *
+In its core nature CMB is an immensely redshifted black-body radiation - a collection of photons - with average colour temperature of 2.725 K.
+Describing and analyzing the CMB is like the opposite of describing energy levels of the hydrogen atom. What do I mean? In the case of the hydrogen atom you have an initial/base image/model (the Schrödinger equation in particular), which on itself could describe your observations pretty well to a certain extent. It is actually a good first approximation regarding the position of the energy levels. But as your measurements become more and more precise, the more details come to light/unveil. You discover the fine structure, the hyperfine structure, so I mean all those small effects and components, which determines the actual/true structure of the energy levels in the H atom. Thus, you need to make numerous corrections to your base model to address all these perturbations.
+The same goes for the CMB. You have a basic image (called the angular power spectrum this case), which describes your observations pretty well. But there are a lot of other effects, which contribute to the final/actual structure of the CMB. Different type of point sources, Sunyev-Zeldovich sources, lensing effects, different effects of the measuring instrument. And you need to pay attention to all of these in a proper analysis of observational data or in an accurate computer simulation.
 
-So my main goal is to 
+* slide 3 *
+For this class, my project goals could be divided into two big sections. The first one involes the simulation of artificial CMB maps and the determination of their power spectrum. These images could be also  I'm also going to reverse engineer the power spectrum from the actual measurements of the Planck space observatory and compare it against the simulated one.
+
+* slide 4 *
+The data 

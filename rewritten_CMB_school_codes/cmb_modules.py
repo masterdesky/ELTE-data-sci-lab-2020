@@ -93,7 +93,9 @@ def make_CMB_T_map(ell, DlTT,
 
 def plot_CMB_map(cmb_map, X_width, Y_width,
                  c_min=-400, c_max=400):
-
+    """
+    
+    """
     fig, axes = plt.subplots(figsize=(12,12))
     
     im = axes.imshow(cmb_map, vmin=c_min, vmax=c_max,
@@ -113,6 +115,62 @@ def plot_CMB_map(cmb_map, X_width, Y_width,
     cbar = plt.colorbar(mappable=im, cax=cax)
     cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
     cbar.set_label('Temperature [$\mu$K]', fontsize=axiscbarfontsize+8, rotation=90, labelpad=22)
+    
+    plt.show()
+  ###############################
+
+def plot_CMB_steps(ClTT2d, CMB_2D, ell2d, X_width, Y_width):
+    """
+    Visualizes 
+    
+    
+    """
+    nrows = 1
+    ncols = 2
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*12, nrows*12))
+    fig.subplots_adjust(wspace=0.3)
+    
+    titles = ['2D Cl spectrum in Image space', 'Real part of the 2D Cl spectrum in Fourier space']
+    labels = ['Angle $[^\circ]$', 'Frequency $[1/^\circ]$']
+    
+    ### PLOT 1.
+    ax = axes[0]
+    # Set 0 values to the minimum of the non-zero values to avoid `ZeroDivision error` in `np.log()`
+    ClTT2d[ClTT2d == 0] = np.min(ClTT2d[ClTT2d != 0])
+    im_1 = ax.imshow(np.log(ClTT2d), vmin=None, vmax=None,
+                     interpolation='bilinear', origin='lower', cmap=cmap.RdBu_r)
+    im_1.set_extent([0, X_width, 0, Y_width])
+    # Create an axis on the right side of `axes`. The width of `cax` will be 5%
+    # of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes('right', size='5%', pad=0.1)
+    cbar = plt.colorbar(mappable=im_1, cax=cax)
+    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
+    cbar.set_label('Log-temperature [$\mu$K]', fontsize=axiscbarfontsize+8, rotation=90, labelpad=19)
+    
+    ### PLOT 2.
+    ax = axes[1]
+    im_2 = ax.imshow(CMB_2D, vmin=0, vmax=np.max(np.conj(FT_2d) * FT_2d * ell2d * (ell2d + 1) / (2 * np.pi)).real,
+                     interpolation='bilinear', origin='lower', cmap=cmap.RdBu_r)
+    im_2.set_extent([ell2d.min(), ell2d.max(), ell2d.min(), ell2d.max()])
+    ax.set_xlim(14000, 16500)
+    ax.set_ylim(14000, 16500)
+    ax.tick_params(axis='x', which='major', labelsize=axisticksize, rotation=42)
+    # Create an axis on the right side of `axes`. The width of `cax` will be 5%
+    # of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes('right', size='5%', pad=0.1)
+    cbar = plt.colorbar(mappable=im_2, cax=cax)
+    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
+    cbar.ax.yaxis.get_offset_text().set(size=axiscbarfontsize)
+    
+    for i in range(ncols):
+        ax = axes[i]
+        
+        ax.set_title(titles[i], fontsize=axistitlesize, fontweight='bold')
+        ax.set_xlabel(labels[i], fontsize=axislabelsize, fontweight='bold')
+        ax.set_ylabel(labels[i], fontsize=axislabelsize, fontweight='bold')
+        ax.tick_params(axis='both', which='major', labelsize=axisticksize)
     
     plt.show()
   ###############################
