@@ -1,3 +1,9 @@
+## Exlude CMB map tables stored as .fits
+*.fits
+
+## Exlude image outputs
+output/
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

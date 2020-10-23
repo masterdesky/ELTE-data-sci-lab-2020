@@ -1,0 +1,30 @@
+%----------------------------------------------------------------------------------------
+%	SLIDE 3.
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Mathematical conventions}
+
+\begin{itemize}
+	\item<1-> A bandlimited function $f$ on the sphere can be expanded in spherical harmonics $Y_{lm}$ as
+	\begin{equation*}
+		f \left( \gamma \right)
+		=
+		\sum_{\ell\,=\,0}^{\ell_{max}} \sum_{m} a_{\ell m} Y_{\ell m} \left( \gamma \right)
+	\end{equation*}
+	where $\gamma$ denotes a unit vector pointing at polar angle $\theta \in \left[ 0, \pi \right]$ and azimuth $\phi \in \left[ 0, 2 \pi \right)$.
+	\item<2-> If we discretize $f \left( \gamma \right)$ we can create the following estimator for the coefficients $a_{\ell m}$:
+	\begin{equation*}
+		a_{\ell m}
+		=
+		\frac{4 \pi}{N_{\text{pix}}} \sum_{p\,=\,0}^{N_{\text{pix}} - 1}
+		Y_{\ell m}^{\ast} \left( \gamma_{p} \right) f \left( \gamma_{p} \right)
+	\end{equation*}
+	\item<3-> The angular power spectrum of this function could be then calculated as
+	\begin{equation*}
+		C_{\ell}
+		=
+		\frac{1}{2 \ell + 1} \sum_{m\,=\,-\ell}^{\ell} \left| a_{\ell m} \right|^{2}
+	\end{equation*}
+\end{itemize}
+
+\end{frame}

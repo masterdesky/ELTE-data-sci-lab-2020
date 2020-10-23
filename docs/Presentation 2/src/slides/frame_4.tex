@@ -1,0 +1,23 @@
+%----------------------------------------------------------------------------------------
+%	SLIDE 4.
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Usage in the CMB analysis}
+
+\begin{itemize}
+	\item<1-> An example of a \q{bandlimited function $f$ on the sphere} could be eg. a $\Delta T \left( \mathbf{n} \right)$ temperature fluctuation map of the sky.
+	\begin{equation*}
+		\Delta T \left( \mathbf{n} \right)
+		=
+		\sum_{\ell\,=\,0}^{\ell_{max}} \sum_{m} a_{\ell m} Y_{\ell m} \left( \mathbf{n} \right)
+	\end{equation*}
+	\item<2-> We can calculate then the $\hat{a}_{\ell m}$ coefficients to get the power spectrum as it was defined above. This estimator is fortunately included in the \texttt{Fortran90} as the \texttt{anafast} function. Since HEALPix was built onto this standard, it is already included that\footnote{\url{https://healpix.sourceforge.io/pdf/facilities.pdf}}, as well as in the \texttt{healpy} \texttt{Python} build too.
+	\item<3-> It is traditionally (and aesthetically) more appropriate however to show $D_{\ell}$ against $\ell$ in a plot, where
+	\begin{equation*}
+		D_{\ell}
+		=
+		\frac{\ell \left( \ell + 1 \right)}{2 \pi} C_{\ell}
+	\end{equation*}
+\end{itemize}
+
+\end{frame}
