@@ -137,11 +137,12 @@ def plot_cmb(proj, cmap=None, c_min=None, c_max=None,
     axes.axis('off')
     
     # Convert 'proj' values to display properly
-    proj[np.abs(proj) == np.inf] = np.nan
+    proj_n = proj.copy()
+    proj_n[np.abs(proj_n) == np.inf] = np.nan
     if c_min is not None:
-        proj[proj < c_min] = c_min
+        proj_n[proj_n < c_min] = c_min
     if c_max is not None:
-        proj[proj > c_max] = c_max
+        proj_n[proj_n > c_max] = c_max
 
     # Set colormap for the image
     if cmap is None:
@@ -149,7 +150,7 @@ def plot_cmb(proj, cmap=None, c_min=None, c_max=None,
     else:
         cmap = cmap
 
-    im = axes.imshow(proj, 
+    im = axes.imshow(proj_n, 
                      cmap=cmap, vmin=c_min, vmax=c_max)
     
     axes.set_xlabel('Angle $[^\circ]$', color='white', fontsize=axislabelsize, fontweight='bold')
@@ -168,7 +169,7 @@ def plot_cmb(proj, cmap=None, c_min=None, c_max=None,
     if save:
         if not os.path.exists(out):
             os.makedirs(out)
-        plt.savefig(out + filename,
+        plt.savefig(out + save_filename,
                     format='png', dpi=200,
                     facecolor='black', edgecolor='black',
                     bbox_inches='tight')
@@ -192,24 +193,30 @@ def cmb_spectrum(hpx, lmax=2500, alm=True):
         The input raw HEALPix dataset, loaded by the `healpy` library from an
         input file (from the `.fits` table in case of Planck's datasets).
     lmax : int
-        Bandlimit of angular power spectrum. The spectrum and coefficients will
+        Bandlimit of the angular power spectrum. The spectrum and coefficients will
         be calculated up to the spherical harmonic order :math:`l_{\mathrm{max}}`.
     
     Returns
     -------
-    ell : 
-    
-    Cl :
-    
+    ell : numpy.array
+        List of multipoles for which the angular power spectrum values
+        were evaluated. Contains integers from 2 to :math:`l_{\mathrm{max}}`,
+        where :math:`l_{\mathrm{max}}` is included.
+    Cl : numpy.array
+        Angular power spectrum bins (:math:`C_{l}`) for every multipole value
+        in `ell`.
     alm : 
+        Spherical harmonics coefficients in the expansion of the
+        :math:`\Delta T (\theta, \varphi)` function.
     """
     ell = np.arange(lmax + 1)
     if alm:
         Cl, alm = hp.anafast(hpx, lmax=lmax, alm=True)
-        return ell, Cl, alm
+        Dl = ell * (ell + 1) / (2 * np.pi) * Cl
+        return ell[2:], Cl[2:], Dl[2:], alm[2:]
     else:
         Cl = hp.anafast(hpx, lmax=lmax, alm=False)
-        return ell, Cl
+        return ell[2:], Cl[2:], Dl[2:]
 
 
 def plot_spectrum(ell, Dl, DlTT,
@@ -243,7 +250,7 @@ def plot_spectrum(ell, Dl, DlTT,
     if save:
         if not os.path.exists(out):
             os.makedirs(out)
-        plt.savefig(out + filename,
+        plt.savefig(out + save_filename,
                     format='png', dpi=200,
                     facecolor='black', edgecolor='black',
                     bbox_inches='tight')
