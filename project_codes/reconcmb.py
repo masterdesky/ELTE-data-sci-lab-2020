@@ -1,9 +1,7 @@
 import os
-import sys
 import numpy as np
 import healpy as hp
 from functools import partial
-import astropy.io.fits as fits
 
 import seaborn as sns
 import matplotlib as mpl
