@@ -28,7 +28,16 @@ axiscbarfontsize = 15
 ##########################################
 
 def load_HPX(file, field=1):
+    """
+    Loads a HEALPix array from a given field of an input FITS file.
     
+    Parameters
+    ----------
+    
+    Returns
+    -------
+    
+    """
     # Load the given field
     hpx, _ = hp.read_map(file, field=field,
                          dtype=np.float64, h=True, verbose=False, memmap=True)
@@ -48,8 +57,8 @@ def load_HPX(file, field=1):
 
 def get_projection(hpx, proj='moll', N_SIDE=2048):
     """
-    Projects the input HEALPix dataset on an arbitrary, but `healpy` implemented
-    geographical projection.
+    Projects the input HEALPix dataset on an arbitrary geographical projection,
+    which is impleneted in the `healpy` package.
     
     Parameters
     ----------
@@ -95,7 +104,8 @@ def get_projection(hpx, proj='moll', N_SIDE=2048):
 def planck_cmap():
     """
     Generates the Planck CMB colormap from an input file, which stores the color values
-    for the complete gradient.
+    for the complete gradient. The colormap values was obtained from the following link:
+    - https://github.com/zonca/paperplots/raw/master/data/Planck_Parchment_RGB.txt
     """
     colombi1_cmap = ListedColormap(np.loadtxt(data + 'Planck_Parchment_RGB.txt')/255.)
     colombi1_cmap.set_bad('black')   # color of missing pixels
@@ -143,13 +153,11 @@ def plot_cmb(proj, cmap=None, c_min=None, c_max=None,
         proj_n[proj_n > c_max] = c_max
 
     # Set colormap for the image
-    if cmap is None:
-        cmap = planck_cmap()
-    else:
-        cmap = cmap
+    colormap = planck_cmap() if cmap is None else cmap
 
     im = axes.imshow(proj_n, 
-                     cmap=cmap, vmin=c_min, vmax=c_max)
+                     cmap=colormap, vmin=c_min, vmax=c_max,
+                     interpolation='bilinear', origin='lower')
     
     axes.set_xlabel('Angle $[^\circ]$', color='white', fontsize=axislabelsize, fontweight='bold')
     axes.set_ylabel('Angle $[^\circ]$', color='white', fontsize=axislabelsize, fontweight='bold')
@@ -225,6 +233,9 @@ def plot_spectrum(ell, Dl, DlTT,
     Paramters
     ---------
     ell : numpy.array
+        List of multipoles for which the angular power spectrum values
+        were evaluated. Contains integers from 2 to :math:`l_{\mathrm{max}}`,
+        where :math:`l_{\mathrm{max}}` is included.
         
     Dl : numpy.array
         

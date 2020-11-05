@@ -1,0 +1,35 @@
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+%----------------------------------------------------------------------------------------
+%	MATH PACKAGES
+%----------------------------------------------------------------------------------------
+
+% Banish \phi from this realm
+\renewcommand{\phi}{\varphi}
+
+\usepackage{amsmath, amssymb, mathrsfs}
+\usepackage{mathtools}
+
+%----------------------------------------------------------------------------------------
+%	DEFINING NEW FUNCTIONS
+%----------------------------------------------------------------------------------------
+
+% --------- MATH MODE ---------
+% Equation numbering per section
+\numberwithin{equation}{section}
+
+% \cdot instead of asterisk (*) symbol
+\mathcode`\*="8000
+{\catcode`\*\active\gdef*{\cdot}}
+
+% --------- OTHER ---------
+
+% Captions
+\usepackage{caption}
+
+% Quotes
+\usepackage[autostyle=false]{csquotes}
+\newcommand{\q}[1]{„#1''} % Redefine quotations

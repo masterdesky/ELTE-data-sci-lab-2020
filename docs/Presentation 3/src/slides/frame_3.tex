@@ -1,0 +1,26 @@
+%----------------------------------------------------------------------------------------
+%	SLIDE 3.
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{HEALPix procession}
+
+\begin{itemize}
+	\item<1-> Optionally imports HEALPix array from FITS file.
+	\item<1-> Main functions for HEALPix array procession:
+	\begin{itemize}
+		\item<1> \texttt{load\_HPX()} : Loads HEALPix array from FITS file.
+		\begin{figure}
+			\includegraphics[width=0.7\textwidth]{./images/load_hpx.png}
+		\end{figure}
+		\item<1> \texttt{get\_projection()} : Maps HEALPix array to given projection.
+		\begin{figure}
+			\includegraphics[width=0.7\textwidth]{./images/gen_maps.png}
+		\end{figure}
+		\item<1> \texttt{plot\_cmb()} : Plots the output of \texttt{get\_projection()}. 
+		\begin{figure}
+			\includegraphics[width=0.7\textwidth]{./images/plot_cmb.png}
+		\end{figure}
+	\end{itemize}
+\end{itemize}
+
+\end{frame}

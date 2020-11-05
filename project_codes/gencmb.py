@@ -66,7 +66,9 @@ def load_spectrum(fname, lmax=None):
 def gen_maps(cls, N_SIDE=2048, lmax=None,
              pol=False, pixwin=False, fwhm=5.8e-3, sigma=8.7e-6):
     """
-    Generate randomized HEALPix arrays from an input angular power spectrum.
+    Generate randomized HEALPix arrays from an input angular power spectrum, using
+    the `synfast` subroutine from the `Fortran90` standard implemented in the HEALPix
+    library.
     
     Parameters
     ----------
