@@ -1,6 +1,7 @@
 # Data Science Computer Laboratory 2020-2021/1 @ ELTE
 
 ## Project : CMB power spectrum
+## Supervisor: István Csabai, PhD
 
 ### Introduction
 The Cosmic Microwave Background (CMB) radiation is one of the key source of information of moderm cosmology. The goal of the project would be to understand CMB data and the tools used in the analysis and reconstruct the power spectrum generation from sky maps.
