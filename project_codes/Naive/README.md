@@ -1,4 +1,4 @@
-# Naive generation of CMB maps base on the work of Jeff McMahon and Renée Hložek
+# Naive generation of CMB maps based on the work of Jeff McMahon and Renée Hložek
 
 ## 
 In this directory there are my completely rewritten routines of the CMB summer school 2019 of the McMahon Cosmology Laboratory. The link to the original materials can be accessed [here](https://sites.google.com/umich.edu/mcmahoncosmology/cmb-school). The very core of my codes are built almost entirely the logic behined the mentioned work, but I expanded them in many parts and present them in a completely new form.
