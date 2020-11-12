@@ -4,7 +4,7 @@ import numpy as np
 
 import seaborn as sns
 import matplotlib as mpl
-import matplotlib.cm as cmap
+import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -23,6 +23,76 @@ axislegendsize = 23
 axistextsize = 20
 axiscbarfontsize = 15
 
+def haversine(X, Y):
+    """
+    Calculates the Haversine formula for every gridpoint on a given domain.
+    
+    Parameters
+    ----------
+    X : numpy.ndarray of shape(N_x, N_y)
+        X coordinates of the domain.
+    Y : numpy.ndarray of shape(N_x, N_y)
+        Y coordinates of the domain.
+    
+    Returns
+    -------
+    R : numpy.ndarray of shape(N_x, N_y)
+        Distance matrix of the grid of the input domain.
+    """
+    R = 2 * np.arcsin(np.sqrt(np.sin(X/2)**2 + np.cos(X) * np.sin(Y/2)**2))
+    
+    return R
+
+def make_coordinates(N_x=2**10, N_y=2**10//2,
+                     X_width=360, Y_width=180,
+                     absolute=False):
+    """
+    Make an "absolute" or "relative", 2D equirectangular coordinate system.
+    
+    Parameters
+    ----------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    X_width : float
+        Size of the map along the X-axis in degrees.
+    Y_width : float
+        Size of the map along the Y-axis in degrees.
+        
+    Returns
+    -------
+    R : numpy.ndarray of shape (N_x, N_y)
+        The distance matrix over the generated domain.
+    """
+    
+    if absolute:
+        x = np.linspace(-np.deg2rad(X_width)/2, np.deg2rad(X_width)/2, N_x)
+        y = np.linspace(-np.deg2rad(Y_width)/2, np.deg2rad(Y_width)/2, N_y)
+    else:
+        x_short = True if N_x < N_x else False
+        prop = N_y/N_x if x_short else N_x/N_y
+        base = np.linspace(-0.5, 0.5, (N_x if x_short else N_y))
+        long = np.linspace(-0.5*prop, 0.5*prop, (N_y if x_short else N_x))
+        x = base if x_short else long
+        y = long if x_short else base
+    X, Y = np.meshgrid(x, y)
+    # Calculating the distance matrix of a grid on a spherical surface using
+    # the Haversine formula
+    R = haversine(X, Y)
+    
+    # The haversine formula above gives us distances on the surface of the sphere,
+    # which are dependent of the radius of the sphere in question.
+    # To make them independent of this quantity (which is completely incomprehensible
+    # in case of the CMB), we need to convert these values to angles. Since we're
+    # working with arcminutes everywhere in this project, I'll convert them
+    # to arcmins.
+    # Sometimes only the proportions needed, but sometimes the arcmins itself.
+    if absolute:
+        R = np.rad2deg(R) * 60
+    
+    return R
+  ###############################
 
 def make_CMB_I_map(ell, DlTT,
                    N_x=2**10, N_y=2**10//2,
@@ -37,11 +107,11 @@ def make_CMB_I_map(ell, DlTT,
     
     Parameters
     ----------
-    ell : list or array-like
+    ell : numpy.array or array-like
         List of multipoles for which the angular power spectrum values
         were evaluated. Contains integers from 2 to :math:`l_{\mathrm{max}}`,
         where :math:`l_{\mathrm{max}}` is included.
-    DlTT : list or array-like
+    DlTT : numpy.array or array-like
         Transformed angular power spectrum bins (:math:`D_{l}`) for every
         multipole value in `ell`. The transformation is
         .. math::
@@ -61,13 +131,13 @@ def make_CMB_I_map(ell, DlTT,
         
     Returns
     -------
-    CMB_I : numpy.ndarray
+    CMB_I : numpy.ndarray of shape (N_x, N_y)
         The generated intensity map of the CMB temperature anisotropy in Image space.
-    ell2d : numpy.ndarray
+    ell2d : numpy.ndarray of shape (N_x, N_y)
         2D spectrum of the :math:`\ell` values.
-    ClTT2d : numpy.ndarray
+    ClTT2d : numpy.ndarray of shape (N_x, N_y)
         2D realization of the :math:`C_{\ell}` power spectrum in Image space.
-    FT_2d : numpy.ndarray
+    FT_2d : numpy.ndarray of shape (N_x, N_y)
         Randomly generated Gaussian map in Fourier space.
     """
     # Convert Dl to Cl
@@ -76,16 +146,13 @@ def make_CMB_I_map(ell, DlTT,
     ClTT[0] = 0
     ClTT[1] = 0
 
-    # Make a 2D equirectangular coordinate system
-    x = np.linspace(-np.deg2rad(X_width)/2, np.deg2rad(X_width)/2, N_x)
-    y = np.linspace(-np.deg2rad(Y_width)/2, np.deg2rad(Y_width)/2, N_y)
-    X, Y = np.meshgrid(x, y)
-    # Radial component `R`
-    R = 2 * np.arcsin(np.sqrt(np.sin(X/2)**2 + np.cos(X) * np.sin(Y/2)**2))
-    R *= (np.sqrt(pix_size)/2) / np.max(R)
+    # Calculate distances to the center of the image on the map
+    R = make_coordinates(N_x, N_y,
+                         X_width, Y_width,
+                         absolute=False)
 
     # Now make a 2D CMB power spectrum
-    pix_to_rad = (pix_size/60 * np.pi/180)     # Going from `pix_size` in arcmins to degrees and then degrees to radians
+    pix_to_rad = np.deg2rad(pix_size/60)       # Going from `pix_size` in arcmins to radians
     ell_scale_factor = 2 * np.pi / pix_to_rad  # Now relating the angular size in radians to multipoles
     ell2d = R * ell_scale_factor               # Making a fourier space analogue to the real space `R` vector
 
@@ -140,7 +207,7 @@ def plot_CMB_map(CMB_I, X_width, Y_width,
     
     Parameters
     ----------
-    CMB_I : numpy.ndarray
+    CMB_I : numpy.ndarray of shape (N_x, N_y)
         The generated intensity map of the CMB temperature anisotropy in real space.
     X_width : float
         Size of the map along the X-axis in degrees.
@@ -162,20 +229,21 @@ def plot_CMB_map(CMB_I, X_width, Y_width,
     no_grid : bool
         If `True`, then the gridlines will be hidden.
     """
-    fig, axes = plt.subplots(figsize=(16,16),
+    fig, axes = plt.subplots(figsize=(12,12),
                              facecolor='black', subplot_kw={'facecolor' : 'black'})
     axes.set_aspect('equal')
     if no_axis : axes.axis('off')
     if no_grid : axes.grid(False)
     
     # Convert 'CMB_I' to display properly
-    CMB_I[CMB_I < c_min] = c_min
-    CMB_I[CMB_I > c_max] = c_max
+    _map = CMB_I.copy()
+    _map[CMB_I < c_min] = c_min
+    _map[CMB_I > c_max] = c_max
     
     # Set colormap for the image
     colormap = planck_cmap() if cmap is None else cmap
 
-    im = axes.imshow(CMB_I,
+    im = axes.imshow(_map,
                      cmap=colormap, vmin=c_min, vmax=c_max,
                      interpolation='bilinear', origin='lower')
     im.set_extent([-X_width/2,X_width/2, -Y_width/2,Y_width/2])
@@ -212,15 +280,16 @@ def plot_CMB_steps(ell2d, ClTT2d, CMB_2D,
                    X_width, Y_width,
                    no_axis=False, no_grid=True):
     """
-    It plots... something...    
+    Plots the 2D :math:`C_{l}` power spectrum in Image space, and the real part
+    of it in Fourier space.
     
     Parameters
     ----------
-    ell2d : numpy.ndarray
+    ell2d : numpy.ndarray of shape (N_x, N_y)
         2D spectrum of the :math:`\ell` values.
-    ClTT2d : numpy.ndarray
+    ClTT2d : numpy.ndarray of shape (N_x, N_y)
         2D realization of the :math:`C_{\ell}` power spectrum in Image space.
-    CMB_2D : numpy.ndarray
+    CMB_2D : numpy.ndarray of shape (N_x, N_y)
         The randomly generated CMB map in 2D Fourier space, calculated using the
         originally created random 2D Gaussian map.
     X_width : float
@@ -234,7 +303,7 @@ def plot_CMB_steps(ell2d, ClTT2d, CMB_2D,
     """
     nrows = 2
     ncols = 1
-    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*13, nrows*13))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*12, nrows*12))
     fig.subplots_adjust(hspace=0.20)
     
     titles = ['Log. of the 2D $C_{\ell}$ spectrum in Image space',
@@ -251,7 +320,7 @@ def plot_CMB_steps(ell2d, ClTT2d, CMB_2D,
     ## Set 0 values to the minimum of the non-zero values to avoid `ZeroDivision error` in `np.log()`
     ClTT2d[ClTT2d == 0] = np.min(ClTT2d[ClTT2d != 0]) 
     im_1 = ax.imshow(np.log(ClTT2d), vmin=None, vmax=None,
-                     interpolation='bilinear', origin='lower', cmap=cmap.RdBu_r)
+                     interpolation='bilinear', origin='lower', cmap=cm.RdBu_r)
     im_1.set_extent([-X_width/2,X_width/2, -Y_width/2,Y_width/2])
     ## Create an axis on the right side of `axes`. The width of `cax` will be 5%
     ## of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
@@ -269,16 +338,21 @@ def plot_CMB_steps(ell2d, ClTT2d, CMB_2D,
     if no_grid : ax.grid(False)
     
     im_2 = ax.imshow(CMB_2D, vmin=0, vmax=np.max(np.conj(FT_2d) * FT_2d * ell2d * (ell2d + 1) / (2 * np.pi)).real,
-                     interpolation='bilinear', origin='lower', cmap=cmap.RdBu_r)
-    x_min, x_max = int(ell2d.min()), int(ell2d.max())
-    im_2.set_extent([x_min, x_max, x_min, x_max])
+                     interpolation='bilinear', origin='lower', cmap=cm.RdBu_r)
+    ext = ell2d.max()   # Upper border of the extent of the whole map
+    im_2.set_extent([-ext, ext, -ext, ext])
+    
+    lim = int(ext / 3)  # Limit to be plotted
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
     
     ## Set ticks and ticklabels
-    ticks = np.linspace(x_min, x_max, 5)
+    ticks = np.linspace(-lim, lim, 11)
+    ticklabels = np.array(['{0:.0f}'.format(t) for t in ticks])
     ax.set_xticks(ticks)
-    ax.set_xticklabels(ticks)
+    ax.set_xticklabels(ticklabels)
     ax.set_yticks(ticks)
-    ax.set_yticklabels(ticks)
+    ax.set_yticklabels(ticklabels)
     
     ## Create an axis on the right side of `axes`. The width of `cax` will be 5%
     ## of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
@@ -322,7 +396,7 @@ def poisson_source_component(N_x, N_y, pix_size,
 
     Returns:
     --------
-    PSMap : array of shape (N_x, N_y)
+    PSMap : numpy.ndarray of shape (N_x, N_y)
         The Poisson distributed point sources marked on the map in the form of a 2D matrix.
     """
     PSmap = np.zeros([N_x, N_y])
@@ -357,7 +431,7 @@ def exponential_source_component(N_x, N_y, pix_size,
 
     Returns:
     --------
-    PSMap : array of shape (N_x, N_y)
+    PSMap : numpy.ndarray of shape (N_x, N_y)
         The exponentially distributed point sources marked on the map in the form of a 2D matrix.
     """
     PSmap = np.zeros([N_x, N_y])
@@ -375,7 +449,8 @@ def beta_function(N_x, N_y,
                   X_width, Y_width, pix_size,
                   SZ_beta, SZ_theta_core):
     """
-    Makes a 2D beta function map to mock the intensity spread of SZ sources. 
+    Makes a 2D beta function map to mock the intensity spread of Sunyaev–Zeldovich
+    sources. 
     
     Parameters:
     -----------
@@ -396,27 +471,23 @@ def beta_function(N_x, N_y,
 
     Returns:
     --------
-    beta : array of shape (N_x, N_y)
+    beta : numpy.ndarray of shape (N_x, N_y)
     """
-    # Make a 2D equirectangular coordinate system
-    x = np.linspace(-np.deg2rad(X_width)/2, np.deg2rad(X_width)/2, N_x)
-    y = np.linspace(-np.deg2rad(Y_width)/2, np.deg2rad(Y_width)/2, N_y)
-    X, Y = np.meshgrid(x, y)
-    # Radial component `R`
-    R = 2 * np.arcsin(np.sqrt(np.sin(X/2)**2 + np.cos(X) * np.sin(Y/2)**2))
-    R *= (np.sqrt(pix_size)/2) / np.max(R) * 1000
+    # Calculate distances to the center of the image on the map
+    R = make_coordinates(N_x, N_y,
+                         X_width, Y_width,
+                         absolute=True)
     
-    beta = (1 + (R/SZ_theta_core)**2)**((1-3*SZ_beta)/2)
+    beta = (1 + (R/SZ_theta_core)**2)**((1 - 3*SZ_beta)/2)
 
     return(beta)
 
 def SZ_source_component(N_x, N_y,
                         X_width, Y_width, pix_size,
                         number_of_SZ_clusters, mean_amplitude_of_SZ_clusters,
-                        SZ_beta, SZ_theta_core,
-                        do_plots):
+                        SZ_beta, SZ_theta_core):
     """
-    Makes a realization of a naive SZ effect map.
+    Makes a realization of a naive Sunyaev–Zeldovich effect map.
 
     Parameters:
     -----------
@@ -438,16 +509,14 @@ def SZ_source_component(N_x, N_y,
         desc
     SZ_theta_core : float
         desc
-    do_plots : bool
-        desc
 
     Returns:
     --------
-    SZmap : 
-        The intensity map of the generated Sunyaev–Zeldovich sources with beta
+    SZmap : numpy.ndarray of shape (N_x, N_y)
+        The intensity map of the generated SZ sources with beta
         profiles.
-    SZcat : 
-        desc
+    SZcat : numpy.ndarray of shape (3, number_of_SZ_clusters)
+        Catalogue of SZ sources, containing (X, Y, amplitude) in each entry
     """
 
     # Placeholder for the SZ map
@@ -464,20 +533,6 @@ def SZ_source_component(N_x, N_y,
         SZcat[2,i] = pix_amplitude
         SZmap[pix_x,pix_y] += pix_amplitude
 
-    if do_plots:
-        hist, bins = np.histogram(SZmap, bins=50, range=[SZmap.min(),-10])
-        width = 1.0 * np.diff(bins).min()
-        centers = (bins[1:] + bins[:-1]) / 2
-        fig, axes = plt.subplots(figsize=(12,12),
-                                 facecolor='black', subplot_kw={'facecolor' : 'black'})
-        axes.set_yscale('log')
-        axes.bar(centers, hist, width=width,
-                 color=cm.magma(0.93), ec='black', lw=0.5)
-        axes.set_xlabel('Source amplitude [$\mu$K]', fontsize=axislabelsize, fontweight='bold', color='white')
-        axes.set_ylabel('Number of pixels', fontsize=axislabelsize, fontweight='bold', color='white')
-        axes.tick_params(axis='both', which='major', labelsize=axisticksize, colors='white')
-        plt.show()
-
     # Make a beta function
     beta = beta_function(N_x, N_y, X_width, Y_width, pix_size, SZ_beta, SZ_theta_core)
 
@@ -487,83 +542,203 @@ def SZ_source_component(N_x, N_y,
     SZmap = np.fft.fftshift(np.real(np.fft.ifft2(FT_beta.T*FT_SZmap)))
 
     return SZmap, SZcat, beta
-
-    # make a beta function
-    beta = beta_function(N, pix_size, SZ_beta, SZ_theta_core)
-
-    # convolve the beta function with the point source amplitude to get the SZ map
-    # NOTE: you should go back to the Intro workshop for more practice with convolutions!
-    FT_beta = np.fft.fft2(np.fft.fftshift(beta))
-    FT_SZmap = np.fft.fft2(np.fft.fftshift(SZmap))
-    SZmap = np.fft.fftshift(np.real(np.fft.ifft2(FT_beta*FT_SZmap)))
-
-    # return the SZ map
-    return(SZmap, SZcat)
   ############################### 
 
-def convolve_map_with_gaussian_beam(N,pix_size,beam_size_fwhp,Map):
-    "convolves a map with a gaussian beam pattern.  NOTE: pix_size and beam_size_fwhp need to be in the same units" 
-    # make a 2d gaussian 
-    gaussian = make_2d_gaussian_beam(N,pix_size,beam_size_fwhp)
-  
-    # do the convolution
-    FT_gaussian = np.fft.fft2(np.fft.fftshift(gaussian))
-    FT_Map = np.fft.fft2(np.fft.fftshift(Map))
-    convolved_map = np.fft.fftshift(np.real(np.fft.ifft2(FT_gaussian*FT_Map)))
+def make_2d_gaussian_beam(N_x=2**10, N_y=2**10//2,
+                          beam_size_fwhp=1.25):
+    """
+    Creates a 2D Gaussian function.
     
-    # return the convolved map
-    return(convolved_map)
-  ###############################   
+    Paramters
+    ---------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    beam_size_fwhp : float
+        Mean FWHM of the simulated beam.
+    
+    Returns
+    -------
+    gaussian : numpy.ndarray of shape (N_x, N_y)
+        The 2D Gaussian function over the input domain.
+    """
+    # Calculate distances to the center of the image on the map
+    R = make_coordinates(N_x, N_y,
+                         X_width, Y_width,
+                         absolute=True)
 
-def make_2d_gaussian_beam(N,pix_size,beam_size_fwhp):
-     # make a 2d coordinate system
-    N=int(N)
-    ones = np.ones(N)
-    inds  = (np.arange(N)+.5 - N/2.) * pix_size
-    X = np.outer(ones,inds)
-    Y = np.transpose(X)
-    R = np.sqrt(X**2. + Y**2.)
-  
-    # make a 2d gaussian 
-    beam_sigma = beam_size_fwhp / np.sqrt(8.*np.log(2))
-    gaussian = np.exp(-.5 *(R/beam_sigma)**2.)
+    ## Make a 2D Gaussian 
+    # Planck's beam sigma values are approximately similar to this in magnitude
+    beam_sigma = beam_size_fwhp / np.sqrt(8 * np.log(2))
+    gaussian = np.exp(-0.5 * (R/beam_sigma)**2)
     gaussian = gaussian / np.sum(gaussian)
- 
-    # return the gaussian
-    return(gaussian)
+
+    return gaussian
+
+def convolve_map_with_gaussian_beam(Map,
+                                    N_x=2**10, N_y=2**10//2,
+                                    beam_size_fwhp=1.25):
+    """
+    Convolves a map with a Gaussian beam pattern.
+    
+    Paramters
+    ---------
+    Map : numpy.ndarray of shape (N_x, N_y)
+        The input map to be convolved with the generated Gaussian.
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    beam_size_fwhp : float
+        Mean FWHM of the simulated beam.
+    
+    Returns
+    -------
+    convolved_map : numpy.ndarray of shape (N_x, N_y)
+        The beam convolved with the input map.
+    """ 
+    # make a 2d gaussian 
+    gaussian = make_2d_gaussian_beam(N_x, N_y,
+                                     beam_size_fwhp)
+  
+    ## Do the convolution
+    # 1. First add the shift so that it is central
+    FT_gaussian = np.fft.fft2(np.fft.fftshift(gaussian))
+    # 2. Shift the map too
+    FT_map = np.fft.fft2(np.fft.fftshift(Map))
+    convolved_map = np.fft.fftshift(np.real(np.fft.ifft2(FT_gaussian*FT_map))) 
+    
+    return convolved_map
   ###############################  
 
-def make_noise_map(N,pix_size,white_noise_level,atmospheric_noise_level,one_over_f_noise_level):
-    "makes a realization of instrument noise, atmosphere and 1/f noise level set at 1 degrees"
-    ## make a white noise map
-    N=int(N)
-    white_noise = np.random.normal(0,1,(N,N)) * white_noise_level/pix_size
+def gen_white_noise(N_x, N_y,
+                    pix_size,
+                    white_noise_level):
+    """
+    Makes a white noise map.
+    
+    Parameters
+    ----------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    white_noise_level : float
+    
+    Returns
+    -------
+    white_noise : numpy.ndarray of shape (N_x, N_y)
+        The white noise map.
+    """
+    white_noise = np.random.normal(0,1,(N_x,N_y)) * white_noise_level/pix_size
+    
+    return white_noise
+
+def gen_atmospheric_noise(N_x, N_y,
+                          X_width, Y_width, pix_size,
+                          atmospheric_noise_level):
+    """
+    Makes an atmospheric noise map.
+    
+    Parameters
+    ----------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    X_width : float
+        Size of the map along the X-axis in degrees.
+    Y_width : float
+        Size of the map along the Y-axis in degrees.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    atmospheric_noise_level : float
+    
+    Returns
+    -------
+    atmospheric_noise : numpy.ndarray of shape (N_x, N_y)
+        The atmospheric noise map.
+    """
+    # Calculate distances to the center of the image on the map
+    R = make_coordinates(N_x, N_y,
+                         X_width, Y_width,
+                         absolute=True)
+    # Convert distances in arcmin to degrees
+    R /= 60
+    mag_k = 2 * np.pi/(R + 0.01)  # 0.01 is a regularization factor
+    atmospheric_noise = np.fft.fft2(np.random.normal(0,1,(N_x,N_y)))
+    atmospheric_noise  = np.fft.ifft2(atmospheric_noise * np.fft.fftshift(mag_k**(5/3)))
+    atmospheric_noise = atmospheric_noise * atmospheric_noise_level/pix_size
+    
+    return atmospheric_noise
+
+def gen_one_over_f_noise(N_x,
+                         pix_size,
+                         one_over_f_noise_level):
+    """
+    Generates 1/f noise in the X direction.
+    
+    Parameters
+    ----------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    one_over_f_noise_level : float
+    
+    Returns
+    -------
+    one_over_f_noise : numpy.ndarray of shape (N_x, N_y)
+        The 1/f noise map along the X direction.
+    """
+    ones = np.ones(N_x)
+    inds  = (np.arange(N_x)+0.5 - N_x/2)
+    X = np.outer(ones,inds) * pix_size / 60  # [degrees]
+    kx = 2 * np.pi/(X+0.01)                  # 0.01 is a regularization factor
+    one_over_f_noise = np.fft.fft2(np.random.normal(0,1,(N_x,N_y)))
+    one_over_f_noise = np.fft.ifft2(one_over_f_noise * np.fft.fftshift(kx)) * one_over_f_noise_level/pix_size
+    
+    return one_over_f_noise
+    
+def make_noise_map(N_x, N_y,
+                   X_width, Y_width, pix_size,
+                   white_noise_level=10,
+                   atmospheric_noise_level=0.1, one_over_f_noise_level=0.2):
+    """
+    Makes a realization of instrument noise, atmosphere and :math:`1/f`
+    noise level set at 1 degrees.
+    
+    Parameters
+    ----------
+    
+    Returns
+    -------
+    """
+    
+    # Make a white noise map
+    white_noise = gen_white_noise(N_x, N_y,
+                                 pix_size,
+                                 white_noise_level)
  
-    ## make an atmosperhic noise map
-    atmospheric_noise = 0.
+    # Make an atmosperhic noise map
+    atmospheric_noise = 0
     if (atmospheric_noise_level != 0):
-        ones = np.ones(N)
-        inds  = (np.arange(N)+.5 - N/2.) 
-        X = np.outer(ones,inds)
-        Y = np.transpose(X)
-        R = np.sqrt(X**2. + Y**2.) * pix_size /60. ## angles relative to 1 degrees  
-        mag_k = 2 * np.pi/(R+.01)  ## 0.01 is a regularizaiton factor
-        atmospheric_noise = np.fft.fft2(np.random.normal(0,1,(N,N)))
-        atmospheric_noise  = np.fft.ifft2(atmospheric_noise * np.fft.fftshift(mag_k**(5/3.)))* atmospheric_noise_level/pix_size
+        atmospheric_noise = gen_atmospheric_noise(N_x, N_y,
+                                                  X_width, Y_width, pix_size,
+                                                  atmospheric_noise_level)
 
-    ## make a 1/f map, along a single direction to illustrate striping 
-    oneoverf_noise = 0.
+    # Make a 1/f map, along a single direction to illustrate striping 
+    one_over_f_noise = 0
     if (one_over_f_noise_level != 0): 
-        ones = np.ones(N)
-        inds  = (np.arange(N)+.5 - N/2.) 
-        X = np.outer(ones,inds) * pix_size /60. ## angles relative to 1 degrees 
-        kx = 2 * np.pi/(X+.01) ## 0.01 is a regularizaiton factor
-        oneoverf_noise = np.fft.fft2(np.random.normal(0,1,(N,N)))
-        oneoverf_noise = np.fft.ifft2(oneoverf_noise * np.fft.fftshift(kx))* one_over_f_noise_level/pix_size
+        one_over_f_noise = gen_one_over_f_noise(N_x,
+                                                pix_size,
+                                                one_over_f_noise_level)
 
-    ## return the noise map
-    noise_map = np.real(white_noise + atmospheric_noise + oneoverf_noise)
-    return(noise_map)
+    noise_map = np.real(white_noise + atmospheric_noise + one_over_f_noise)
+    return noise_map
   ###############################
 def Filter_Map(Map,N,N_mask):
     N=int(N)

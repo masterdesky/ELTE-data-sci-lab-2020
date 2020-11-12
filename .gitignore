@@ -1,3 +1,6 @@
+## Exclude PyCache folders
+__pycache__/
+
 ## Exlude CMB map tables stored as .fits
 *.fits
 
