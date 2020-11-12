@@ -35,10 +35,21 @@ def load_HPX(file, field=1):
     
     Parameters
     ----------
+    file : 
+        The input `.fits` file.
+    field : int
+        
     
     Returns
     -------
-    
+    hpx : numpy.array of shape (12 * N_SIDE**2, )
+        Raw HEALPix dataset, loaded by the `healpy` library from an
+        input file (from the `.fits` table in case of Planck's datasets).
+        Stored as Kelvin values in case of Planck.
+    hpx_muK : numpy.array of length (12 * N_SIDE^2, )
+        The same, raw HEALPix dataset with values converted to micro Kelvin.
+    header : astropy.io.fits.header.Header
+        The header file of the input `.fits` table.
     """
     # Load the given field
     hpx, _ = hp.read_map(file, field=field,
@@ -60,13 +71,14 @@ def load_HPX(file, field=1):
 def get_projection(hpx, proj='moll', N_SIDE=2048):
     """
     Projects the input HEALPix dataset on an arbitrary geographical projection,
-    which is impleneted in the `healpy` package.
+    which is implemented in the `healpy` package.
     
     Parameters
     ----------
     hpx : numpy.ndarray in the size of (12 * N_SIDE**2, )
-        The input raw HEALPix dataset, loaded by the `healpy` library from an
+        Raw HEALPix dataset, loaded by the `healpy` library from an
         input file (from the `.fits` table in case of Planck's datasets).
+        Stored as Kelvin values in case of Planck.
     proj : str
         The projection used to create a 2D matrix from the input HEALPix data. Can be
         either of the following:
