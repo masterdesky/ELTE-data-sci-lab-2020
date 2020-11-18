@@ -201,7 +201,8 @@ def planck_cmap():
 def plot_CMB_map(CMB_I, X_width, Y_width,
                  c_min, c_max, cmap=None,
                  save=False, save_filename='default_name_cmb',
-                 no_axis=False, no_grid=True):
+                 no_axis=False, no_grid=True, no_title=True,
+                 no_cbar=False):
     """
     Plots the generated rectangular intensity map of the CMB temperature anisotropy.
     
@@ -228,8 +229,12 @@ def plot_CMB_map(CMB_I, X_width, Y_width,
         If `True`, then the axis labels and ticks will be hidden.
     no_grid : bool
         If `True`, then the gridlines will be hidden.
+    no_cbar : bool
+        If `True`, then the colorbar will be hidden.
     """
-    fig, axes = plt.subplots(figsize=(12,12),
+    # Setup figure size
+    f_size = (12 * X_width/Y_width) if X_width > Y_width else (12 * Y_width/X_width)
+    fig, axes = plt.subplots(figsize=(f_size, f_size),
                              facecolor='black', subplot_kw={'facecolor' : 'black'})
     axes.set_aspect('equal')
     if no_axis : axes.axis('off')
@@ -248,20 +253,21 @@ def plot_CMB_map(CMB_I, X_width, Y_width,
                      interpolation='bilinear', origin='lower')
     im.set_extent([-X_width/2,X_width/2, -Y_width/2,Y_width/2])
     
-    axes.set_title('map mean : {0:.3f} | map rms : {1:.3f}'.format(np.mean(CMB_I), np.std(CMB_I)),
-                   color='white', fontsize=axistitlesize, fontweight='bold', pad=10)
+    if not no_title : axes.set_title('map mean : {0:.3f} | map rms : {1:.3f}'.format(np.mean(CMB_I), np.std(CMB_I)),
+                                     color='white', fontsize=axistitlesize, fontweight='bold', pad=10)
     axes.set_xlabel('Angle $[^\circ]$', color='white', fontsize=axislabelsize, fontweight='bold')
     axes.set_ylabel('Angle $[^\circ]$', color='white', fontsize=axislabelsize, fontweight='bold')
     axes.tick_params(axis='both', which='major', colors='white', labelsize=axisticksize, labelrotation=42, pad=10)
     
-    # Create an axis on the right side of `axes`. The width of `cax` will be 2%
-    # of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
-    divider = make_axes_locatable(axes)
-    cax = divider.append_axes('right', size='2%', pad=0.1)
-    cbar = plt.colorbar(mappable=im, cax=cax)#, shrink=0.735, pad=0.02)
-    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='white')
-    cbar.set_label('Temperature [$\mu$K]', color='white',
-                   fontsize=axiscbarfontsize+8, rotation=90, labelpad=12)
+    if not no_cbar:
+        # Create an axis on the right side of `axes`. The width of `cax` will be 2%
+        # of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
+        divider = make_axes_locatable(axes)
+        cax = divider.append_axes('right', size='2%', pad=0.1)
+        cbar = plt.colorbar(mappable=im, cax=cax)#, shrink=0.735, pad=0.02)
+        cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='white')
+        cbar.set_label('Temperature [$\mu$K]', color='white',
+                       fontsize=axiscbarfontsize+8, rotation=90, labelpad=12)
 
     if save:
         if not os.path.exists(out):
@@ -276,19 +282,67 @@ def plot_CMB_map(CMB_I, X_width, Y_width,
     plt.show()
   ###############################
 
-def plot_CMB_steps(ell2d, ClTT2d, FT_2d, CMB_2D,
-                   X_width, Y_width,
-                   no_axis=False, no_grid=True):
+def plot_steps_2D_ps(ClTT2d,
+                     X_width, Y_width,
+                     no_axis=False, no_grid=True):
     """
-    Plots the 2D :math:`C_{l}` power spectrum in Image space, and the real part
-    of it in Fourier space.
+    Plots the logarithm of the 2D :math:`C_{l}` power spectrum in Image space.
+    
+    Parameters
+    ----------
+    ClTT2d : numpy.ndarray of shape (N_x, N_y)
+        2D realization of the :math:`C_{\ell}` power spectrum in Image space.
+    X_width : float
+        Size of the map along the X-axis in degrees.
+    Y_width : float
+        Size of the map along the Y-axis in degrees.
+    no_axis : bool
+        If `True`, then the axis labels and ticks will be hidden.
+    no_grid : bool
+        If `True`, then the gridlines will be hidden.
+    """
+    f_size = (12 * X_width/Y_width) if X_width > Y_width else (12 * Y_width/X_width)
+    fig, axes = plt.subplots(figsize=(f_size, f_size))
+    fig.subplots_adjust(hspace=0.20)
+
+    axes.set_aspect('equal')
+    if no_axis : axes.axis('off')
+    if no_grid : axes.grid(False)
+
+    ### PLOT 1. -- Logarithm of the 2D Cl spectrum
+    ## Set 0 values to the minimum of the non-zero values to avoid `ZeroDivision error` in `np.log()`
+    ClTT2d[ClTT2d == 0] = np.min(ClTT2d[ClTT2d != 0]) 
+    im = axes.imshow(np.log(ClTT2d), vmin=None, vmax=None,
+                     interpolation='bilinear', origin='lower', cmap=cm.RdBu_r)
+    im.set_extent([-X_width/2,X_width/2, -Y_width/2,Y_width/2])
+    
+    axes.set_title('Log. of the 2D $C_{\ell}$ spectrum in Image space',
+                   fontsize=axistitlesize, fontweight='bold')
+    axes.set_xlabel('Angle $[^\circ]$', fontsize=axislabelsize, fontweight='bold')
+    axes.set_ylabel('Angle $[^\circ]$', fontsize=axislabelsize, fontweight='bold')
+    axes.tick_params(axis='both', which='major', labelsize=axisticksize, rotation=42, pad=10)
+    
+    ## Create an axis on the right side of `axes`. The width of `cax` will be 5%
+    ## of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
+    divider = make_axes_locatable(axes)
+    cax = divider.append_axes('right', size='2%', pad=0.1)
+    cbar = plt.colorbar(mappable=im, cax=cax)
+    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
+    cbar.ax.yaxis.get_offset_text().set(size=axiscbarfontsize)
+    cbar.set_label('Log-temperature [$\mu$K]', fontsize=axiscbarfontsize+8,
+                   rotation=90, labelpad=19)
+
+def plot_steps_2D_gauss(ell2d, FT_2d, CMB_2D,
+                        X_width, Y_width,
+                        no_axis=False, no_grid=True):
+    """
+    Plots the the real part of the generated 2D Gauissian noise in
+    Fourier space.
     
     Parameters
     ----------
     ell2d : numpy.ndarray of shape (N_x, N_y)
         2D spectrum of the :math:`\ell` values.
-    ClTT2d : numpy.ndarray of shape (N_x, N_y)
-        2D realization of the :math:`C_{\ell}` power spectrum in Image space.
     FT_2d : numpy.ndarray of shape (N_x, N_y)
         The generated 2D Gaussian map in Fourier space.
     CMB_2D : numpy.ndarray of shape (N_x, N_y)
@@ -303,75 +357,44 @@ def plot_CMB_steps(ell2d, ClTT2d, FT_2d, CMB_2D,
     no_grid : bool
         If `True`, then the gridlines will be hidden.
     """
-    nrows = 2
-    ncols = 1
-    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*12, nrows*12))
-    fig.subplots_adjust(hspace=0.20)
+    fig, axes = plt.subplots(figsize=(12,12))
+    axes.set_aspect('equal')
+    if no_axis : axes.axis('off')
+    if no_grid : axes.grid(False)
     
-    titles = ['Log. of the 2D $C_{\ell}$ spectrum in Image space',
-              'Real part of the 2D $C_{\ell}$ spectrum in Fourier space']
-    labels = ['Angle $[^\circ]$',
-              'Multipoles $(\ell)$']
-    
-    ### PLOT 1. -- Logarithm of the 2D Cl spectrum
-    ax = axes[0]
-    ax.set_aspect('equal')
-    if no_axis : ax.axis('off')
-    if no_grid : ax.grid(False)
-
-    ## Set 0 values to the minimum of the non-zero values to avoid `ZeroDivision error` in `np.log()`
-    ClTT2d[ClTT2d == 0] = np.min(ClTT2d[ClTT2d != 0]) 
-    im_1 = ax.imshow(np.log(ClTT2d), vmin=None, vmax=None,
-                     interpolation='bilinear', origin='lower', cmap=cm.RdBu_r)
-    im_1.set_extent([-X_width/2,X_width/2, -Y_width/2,Y_width/2])
-    ## Create an axis on the right side of `axes`. The width of `cax` will be 5%
-    ## of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='2%', pad=0.1)
-    cbar = plt.colorbar(mappable=im_1, cax=cax)
-    cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
-    cbar.ax.yaxis.get_offset_text().set(size=axiscbarfontsize)
-    cbar.set_label('Log-temperature [$\mu$K]', fontsize=axiscbarfontsize+8, rotation=90, labelpad=19)
-    
-    ### PLOT 2. -- 2D CMB map in Fourier space
-    ax = axes[1]
-    ax.set_aspect('equal')
-    if no_axis : ax.axis('off')
-    if no_grid : ax.grid(False)
-    
-    im_2 = ax.imshow(CMB_2D, vmin=0, vmax=np.max(np.conj(FT_2d) * FT_2d * ell2d * (ell2d + 1) / (2 * np.pi)).real,
+    ### PLOT 2. -- CMB in Fourier space
+    im = axes.imshow(CMB_2D, vmin=0, vmax=np.max(CMB_2D),
                      interpolation='bilinear', origin='lower', cmap=cm.RdBu_r)
     ext = ell2d.max()   # Upper border of the extent of the whole map
-    im_2.set_extent([-ext, ext, -ext, ext])
+    im.set_extent([-ext, ext, -ext, ext])
     
     lim = int(ext / 3)  # Limit to be plotted
-    ax.set_xlim(-lim, lim)
-    ax.set_ylim(-lim, lim)
+    axes.set_xlim(-lim, lim)
+    axes.set_ylim(-lim, lim)
+    
+    axes.set_title('Real part of the 2D CMB map in Fourier space',
+                   fontsize=axistitlesize, fontweight='bold')
+    axes.set_xlabel('Multipoles $(\ell)$', fontsize=axislabelsize, fontweight='bold')
+    axes.set_ylabel('Multipoles $(\ell)$', fontsize=axislabelsize, fontweight='bold')
+    axes.tick_params(axis='both', which='major', labelsize=axisticksize, rotation=42, pad=10)
     
     ## Set ticks and ticklabels
     ticks = np.linspace(-lim, lim, 11)
     ticklabels = np.array(['{0:.0f}'.format(t) for t in ticks])
-    ax.set_xticks(ticks)
-    ax.set_xticklabels(ticklabels)
-    ax.set_yticks(ticks)
-    ax.set_yticklabels(ticklabels)
+    axes.set_xticks(ticks)
+    axes.set_xticklabels(ticklabels)
+    axes.set_yticks(ticks)
+    axes.set_yticklabels(ticklabels)
     
     ## Create an axis on the right side of `axes`. The width of `cax` will be 5%
     ## of `axes` and the padding between `cax` and axes will be fixed at 0.1 inch
-    divider = make_axes_locatable(ax)
+    divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='2%', pad=0.1)
-    cbar = plt.colorbar(mappable=im_2, cax=cax)
+    cbar = plt.colorbar(mappable=im, cax=cax)
     cbar.ax.tick_params(labelsize=axiscbarfontsize, colors='black')
     cbar.ax.yaxis.get_offset_text().set(size=axiscbarfontsize)
-    cbar.set_label('Frequency', fontsize=axiscbarfontsize+8, rotation=90, labelpad=19)
-    
-    for i in range(nrows):
-        ax = axes[i]
-        
-        ax.set_title(titles[i], fontsize=axistitlesize, fontweight='bold')
-        ax.set_xlabel(labels[i], fontsize=axislabelsize, fontweight='bold')
-        ax.set_ylabel(labels[i], fontsize=axislabelsize, fontweight='bold')
-        ax.tick_params(axis='both', which='major', labelsize=axisticksize, rotation=42, pad=10)
+    cbar.set_label('Frequency', fontsize=axiscbarfontsize+8,
+                   rotation=90, labelpad=19)
     
     plt.show()
   ###############################
@@ -409,7 +432,7 @@ def poisson_source_component(N_x, N_y,
         pix_y = int(N_y*np.random.rand()) 
         PSmap[pix_x, pix_y] += np.random.poisson(lam=amplitude_of_sources)
 
-    return(PSmap)
+    return(PSmap.T)
   ############################### 
 
 def exponential_source_component(N_x, N_y,
@@ -446,7 +469,7 @@ def exponential_source_component(N_x, N_y,
         pix_y = int(N_y*np.random.rand()) 
         PSmap[pix_x,pix_y] += np.random.exponential(scale=amplitude_of_sources_EX)
 
-    return(PSmap)
+    return(PSmap.T)
   ###############################
 
 def beta_function(N_x, N_y,
@@ -545,7 +568,7 @@ def SZ_source_component(N_x, N_y,
     FT_SZmap = np.fft.fft2(np.fft.fftshift(SZmap))
     SZmap = np.fft.fftshift(np.real(np.fft.ifft2(FT_beta.T*FT_SZmap)))
 
-    return(SZmap, SZcat, beta)
+    return(SZmap.T, SZcat, beta.T)
   ############################### 
 
 def make_2d_gaussian_beam(N_x, N_y,
@@ -602,7 +625,7 @@ def convolve_map_with_gaussian_beam(Map,
     convolved_map : numpy.ndarray of shape (N_x, N_y)
         The beam convolved with the input map.
     """ 
-    # make a 2d gaussian 
+    # Make a 2D Gaussian 
     gaussian = make_2d_gaussian_beam(N_x, N_y,
                                      beam_size_fwhp)
   
@@ -674,12 +697,12 @@ def gen_atmospheric_noise(N_x, N_y,
     R /= 60
     mag_k = 2 * np.pi/(R + 0.01)  # 0.01 is a regularization factor
     atmospheric_noise = np.fft.fft2(np.random.normal(0,1,(N_x,N_y)))
-    atmospheric_noise  = np.fft.ifft2(atmospheric_noise * np.fft.fftshift(mag_k**(5/3)))
+    atmospheric_noise  = np.fft.ifft2(atmospheric_noise.T * np.fft.fftshift(mag_k**(5/3)))
     atmospheric_noise = atmospheric_noise * atmospheric_noise_level/pix_size
     
     return(atmospheric_noise)
 
-def gen_one_over_f_noise(N_x,
+def gen_one_over_f_noise(N_x, N_y,
                          pix_size,
                          one_over_f_noise_level):
     """
@@ -689,6 +712,8 @@ def gen_one_over_f_noise(N_x,
     ----------
     N_x : int
         Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
     pix_size : float
         Size of a pixel in arcminutes.
     one_over_f_noise_level : float
@@ -698,12 +723,13 @@ def gen_one_over_f_noise(N_x,
     one_over_f_noise : numpy.ndarray of shape (N_x, N_y)
         The 1/f noise map along the X direction.
     """
-    ones = np.ones(N_x)
-    inds  = (np.arange(N_x)+0.5 - N_x/2)
-    X = np.outer(ones,inds) * pix_size / 60  # [degrees]
+    x = np.linspace(-N_x/2, N_x/2, N_x)
+    y = np.linspace(-N_y/2, N_y/2, N_y)
+    X, _ = np.meshgrid(x, y)
+    X *= pix_size / 60                       # Convert to [degrees]
     kx = 2 * np.pi/(X+0.01)                  # 0.01 is a regularization factor
     one_over_f_noise = np.fft.fft2(np.random.normal(0,1,(N_x,N_y)))
-    one_over_f_noise = np.fft.ifft2(one_over_f_noise * np.fft.fftshift(kx)) * one_over_f_noise_level/pix_size
+    one_over_f_noise = np.fft.ifft2(one_over_f_noise.T * np.fft.fftshift(kx)) * one_over_f_noise_level/pix_size
     
     return(one_over_f_noise)
     
@@ -737,9 +763,9 @@ def make_noise_map(N_x, N_y,
     # Make a 1/f map, along a single direction to illustrate striping 
     one_over_f_noise = 0
     if (one_over_f_noise_level != 0): 
-        one_over_f_noise = gen_one_over_f_noise(N_x,
+        one_over_f_noise = gen_one_over_f_noise(N_x, N_y,
                                                 pix_size,
                                                 one_over_f_noise_level)
 
-    noise_map = np.real(white_noise + atmospheric_noise + one_over_f_noise)
+    noise_map = np.real(white_noise.T + atmospheric_noise + one_over_f_noise)
     return(noise_map)
