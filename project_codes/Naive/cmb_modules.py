@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+###########################################################
+# 
+#  Created by @Balázs Pál.
+#  Based on the work of @Jeff McMahon and @Renée Hložek for
+#  demo purposes on the TMCL - CMB summer school in 2019.
+#
+#  Original files can be accessed in the GitHub repo here:
+#  https://github.com/jeffmcm1977/CMBAnalysis_SummerSchool
+###########################################################
+
 import os
 import sys
 import numpy as np
@@ -25,7 +36,8 @@ axiscbarfontsize = 15
 
 def haversine(X, Y):
     """
-    Calculates the Haversine formula for every gridpoint on a given domain.
+    Calculates the Haversine formula for every gridpoint on a given
+    domain by considering R = 1.
     
     Parameters
     ----------
@@ -743,6 +755,19 @@ def make_noise_map(N_x, N_y,
     
     Parameters
     ----------
+    N_x : int
+        Number of pixels in the linear dimension along the X-axis.
+    N_y : int
+        Number of pixels in the linear dimension along the Y-axis.
+    X_width : float
+        Size of the map along the X-axis in degrees.
+    Y_width : float
+        Size of the map along the Y-axis in degrees.
+    pix_size : float
+        Size of a pixel in arcminutes.
+    white_noise_level : float
+    atmospheric_noise_level : float
+    one_over_f_noise_level : float
     
     Returns
     -------
