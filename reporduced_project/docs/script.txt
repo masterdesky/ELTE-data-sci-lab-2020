@@ -1,0 +1,41 @@
+Hello everyone! I would like to speak about my reproduced topic, about navigability in geo-tagged Twitter data. The project was originally handed out to Gábor Németh (I will refer to him a lot) and his supervisor was Eszter Bokányi.
+
+[NEW SLIDE]
+
+Gábor's work was mostly based on an existing article on this topic and dataset. His tasks were to preprocess this given dataset and then reproduce some of the results of this article. He also implemented and used the same methods as the authors and tried to get the same results.
+
+[NEW SLIDE]
+
+The motivation behind the original article and this project topic was to detect indications of the small-world phenomenon in Twitter user data. Probably everyone heard about the small-world model or phenomenon, but if you don't it basically tells us a very interesting property of a really large, so continental or even global network of humans. It states, that if we consider the network of all people living for example on the same continent, and we define the edges of this network or graph as friendships or relatives or acquaintance between two humans (so two nodes), then the path length between two arbitrary, random nodes is most probably very short.
+These edges between nodes in this project are defined as: if a Twitter user follows another user, we draw an edge between them. Also, Twitter has another important information embedded in tweets, namely locational data. This allows us to test the small-world phenomenon on subsets of the graph, where these subsets are selected by the geographical location of nodes. Thus we can even compare properties of these geographical subnetworks with each other.
+
+[NEW SLIDE]
+
+To test the small-world phenomenon we want to explore the so-called navigability of a selected subset of the whole network. What does it mean? Navigability is (you can see the definition on the slide, but it's) basically a measure of the connectedness of a network. So a network has good or high navigability if we can reach a target node B, starting from target node A on a fairly easy route. Bad navigability is the case when node B can be reached only in a lot of steps, or when it can't even be reached at all.
+A feasible tool for measuring this navigability is some kind of "decentralized algorithm", for example the Greedy algorithm, which was used in the original article and thus by Gábor too in his project.
+
+[NEW SLIDE]
+
+The original dataset of Gábor contained a really huge amount of nodes and edges, which was far beyond of his computational limitations. The solve this problem, the idea was to select only one small subset of this dataset and measure the navigability of this subgraph. I think that's totally correct on itself too, since we're originally using this geo-tagged dataset, because we want to examine the small-world phenomenon on a small subset (for example for specific cities or areas). Gábor has chosen the nodes and edges in a circle around Missouri country. And that was the dataset I've also worked with.
+
+The preprocessing part also involved the creation of a neighbour list for every nodes, extracting the geographical data for the selected area and creating another dataset using them and finally selecting the edges between the selected nodes and creating a third dataset using them.
+
+[NEW SLIDE]
+
+My intentions with this project was to rework all results that Gábor got, create new visualizations and try to generally optimize and enhance his algorithms and codes. Why? In this project it is not trivial to create a new figure or implement and try another method to get the same or better results. First reason is that processing the original dataset is very time consuming according to Gábor and thus I couldn't create new datasets for several new cities and areas in this short timeframe. Second I could eg. present a completely new decentralized algorithm, research what algorithms could I use, implement and test several of them, but that would be an even longer project work.
+So what I really did as I said, I tried to optimize Gábor's codes, I've written specific functions for specific recurrent tasks, reworked his figures and utilized more data to run the algorithm on, made a lot of comments for his functions and steps, indented all of his codes for better readability and such other smaller things.
+
+[NEW SLIDE]
+
+I would like to show you my recalculated and replotted results and I would like to compare it to the original article I mentioned at the beginning of the presentation. First here we can see the degree distribution and the cumulative degree distribution (complementer cumulative to be precise) of this small subset chosen around the Missouri area. We can calculate some informative quantities using the data represented on these graphs. For example we can examine, whether our graph shows the properties of a scale-free network, or how strongly the nodes tend to cluster, etc. We say, that a scale-free network's degree distribution follows the power law. Here we can clearly see, that the degree distribution really follows the power law approximately between degrees 20 and 100. Here the exponent in the power law is approximately 2.6 +- 0.02. This is actually equals to the results of the original article in the case of a much larger area. The clustering coefficient seen on the figure description is also somewhat similar to the article's results.
+
+[NEW SLIDE]
+
+In this graph we can see the distance distribution between twelve thousand randomly sampled nodes from this Missouri dataset and a Gaussian KDE fit. Sadly not just Gábor but I also didn't had the necessary computational power to analyze all points even in this very small subset, but at least I could improved it a little bit. He worked with five thousand points, while I plotted here the histogram for twelve thousand as I already mentioned. This image is completely different to the one in the article. In theory this distribution should also follow the power law or more precisely, this distribution should have two separate intervals (one at the beginning and one near at the end), which both follow the power law. We sadly can't see this here, this dataset of twelve thousand points is simply too small to show this.
+
+[NEW SLIDES]
+
+And at the last graph we can see a visualization of the effectiveness of the Greedy algorithm. The Greedy algorithm basically tries to find a path between two given nodes A and B. Every step it looks at the neighbours of the node it currently standing on, and step on the closest one. That's it. And we can define some arbitrary constraints on this algorithm. For example we can limit the number of steps (so-called hops) of the algorithm, we can define a distance threshold, to prevent the algorithm to step on too far nodes, even if it's neighbouring, etc. Given these constraints it is very likely that there will be some cases, when the algorithm simply won't or can't find a legit path between the starting and the target nodes. The routing is unsuccessful.
+This figure (with logarithmic y axis) shows the effectiveness of the algorithm for 2000 randomly chosen start and target node pairs for different distance thresholds. The selection didn't considered choosing neighbouring nodes for start and target pairs. In the original article this graph looked also somewhat different, but the reason for is the same like previously. The examined fraction of the dataset is very small.
+
+And so, that wraps up all my work on reproducing the results of Gábor, and thank you for your attention!

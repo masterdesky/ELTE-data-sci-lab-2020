@@ -1,0 +1,27 @@
+%----------------------------------------------------------------------------------------
+%	SLIDE 2.
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Dataset and preprocessing}
+
+\begin{itemize}
+	\item<1-> Pretty large dataset originally ($100$+ million edges)
+	\begin{itemize}
+		\item<1-> Contains user ID's, edges and geo-tags
+		\item<1-> Requires a lot of computational time to preprocess
+		\item<1-> Requires a lot of RAM to even load it, and we also need to execute the algorithm using the data too
+	\end{itemize}
+	\item<2-> Dataset I've worked with was just a subset of nodes of the original network
+	\begin{itemize}
+		\item<2-> Nodes were chosen around Missouri area and only the giant component was kept: $39501$ nodes and $193299$ edges
+		\item<2-> Positional coordinates (latitudes-longitudes) were also included
+	\end{itemize}
+	\item<3-> Some other preprocessing steps were also made
+	\begin{itemize}
+		\item<3-> Creating a neighbour list for every nodes
+		\item<3-> Creating a dataset with user ID's and tweet locations
+		\item<3-> Selecting the edges in the examined smaller area
+	\end{itemize}
+\end{itemize}
+
+\end{frame}
