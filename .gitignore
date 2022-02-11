@@ -1,3 +1,6 @@
+## Exclude checkpoints
+.ipynb_checkpoints/
+
 ## Exclude PyCache folders
 __pycache__/
 
