@@ -13,7 +13,6 @@ import os
 import sys
 import numpy as np
 
-import seaborn as sns
 import matplotlib as mpl
 import matplotlib.cm as cm
 import matplotlib.mlab as mlab

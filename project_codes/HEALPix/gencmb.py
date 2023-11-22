@@ -2,21 +2,7 @@ import os
 import numpy as np
 import healpy as hp
 
-# Inuput and output folders
-data = '../data/'
-out = '../output/'
 
-# Various size parameters for plotting
-axistitlesize = 20
-axisticksize = 17
-axislabelsize = 26
-axislegendsize = 23
-axistextsize = 20
-axiscbarfontsize = 15
-
-##########################################
-##    I. Load arbitrary power spectrum
-##########################################
 def load_spectrum(fname, lmax=None):
     """
     Loads and arbitrary angular power spectrum from a file.
@@ -28,15 +14,15 @@ def load_spectrum(fname, lmax=None):
     Parameters
     ----------
     fname : str
-       Name of input file containing the multipoles and transformed angular
-       power spectrum values by columns. The considered case is that the first
-       column contains the :math:`l` values, while the second contains the
-       :math:`D_{l}` transformed spectrum. The :math:`l` should start with
-       the order :math:`l = 2`.
+       Path to input file containing the multipoles and transformed
+       angular power spectrum values by columns. The considered case is
+       that the first column contains the :math:`l` values, while the
+       second contains the :math:`D_{l}` transformed spectrum. The
+       :math:`l` should start with the order :math:`l = 2`.
     
     lmax : int
-        Bandlimit of the angular power spectrum. The spectrum will be read in up to
-        the spherical harmonic order :math:`l_{\mathrm{max}}`.
+        Bandlimit of the angular power spectrum. The spectrum will be
+        read in up to the spherical harmonic order :math:`l_{\mathrm{max}}`.
 
     Returns
     -------
@@ -46,16 +32,14 @@ def load_spectrum(fname, lmax=None):
         where :math:`l_{\mathrm{max}}` is included.
     
     DlTT : numpy.array
-        Transformed angular power spectrum bins (:math:`D_{l}`) for every
-        multipole value in `ell`. The transformation is
+        Transformed angular power spectrum bins (:math:`D_{l}`) for
+        every multipole value in `ell`. The transformation is
         .. math::
                     D_{l} = \frac{l (l + 1)}{2 \pi} C_{l}.
     """
-    assert os.path.exists(data + fname), \
-        "There is no file named `{0}` exists in the directory `{1}`".format(fname, data.strip('./'))
+    assert os.path.exists(fname), f"There is no file named `{fname}`"
     
-    d = np.genfromtxt(data + fname,
-                      max_rows=lmax-1)
+    d = np.genfromtxt(fname, max_rows=lmax-1)
     ell = d[:, 0]
     DlTT = d[:, 1]
     ClTT = DlTT * 2 * np.pi / (ell * (ell + 1))
@@ -66,9 +50,9 @@ def load_spectrum(fname, lmax=None):
 def gen_maps(cls, N_SIDE=2048, lmax=None,
              pol=False, pixwin=False, fwhm=5.8e-3, sigma=8.7e-6):
     """
-    Generate randomized HEALPix arrays from an input angular power spectrum, using
-    the `synfast` subroutine from the `Fortran90` standard implemented in the HEALPix
-    library.
+    Generate randomized HEALPix arrays from an input angular power
+    spectrum, using the `synfast` subroutine from the `Fortran90`
+    standard implemented in the HEALPix library.
     
     Parameters
     ----------
@@ -118,4 +102,5 @@ def gen_maps(cls, N_SIDE=2048, lmax=None,
         Or, if `alm` is `True`, a tuple of `(map, alm)`, where
         `alm` is possibly a list of :math:`a_{lm}` arrays if polarized input.
     """
-    return hp.synfast(cls, nside=N_SIDE, lmax=lmax, pol=pol, pixwin=pixwin, fwhm=fwhm, sigma=sigma)
+    return hp.synfast(cls, nside=N_SIDE, lmax=lmax, pol=pol,
+                      pixwin=pixwin, fwhm=fwhm, sigma=sigma)
